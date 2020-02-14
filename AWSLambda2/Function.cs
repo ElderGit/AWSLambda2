@@ -100,10 +100,13 @@ namespace AWSLambda2
         }
         public string HtmlContent(ArrayList array)
         {
-            var birthday = array[0];
-            foreach(ArrayList arr in array)
+            string html = File.ReadAllText("Index.txt");
+            JObject birthday = JObject.Parse((string)array[0]);
+            foreach(JObject arr in birthday)
             {
-                return arr.ToString();
+                //var name = arr[0]["name"];
+                var html1 = html.Split("<!-- *line* -->");
+                //var newHtml = html1[0] + "<td>" + arr["name"].ToString();
             }
             return File.ReadAllText("Index.txt");
         }
