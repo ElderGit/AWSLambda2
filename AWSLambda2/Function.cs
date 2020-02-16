@@ -59,9 +59,9 @@ namespace AWSLambda2
           
             var dayDate =DateNow();
 
-            var profilesBirthDay = new ArrayList();
-            var profilesAdmissionDate = new ArrayList();
-            var arrayReturn = new ArrayList();
+           ArrayList profilesBirthDay = new ArrayList();
+            ArrayList profilesAdmissionDate = new ArrayList();
+            ArrayList arrayReturn = new ArrayList();
 
             var profilesJson = json["data"]["company"]["profile_search"]["profiles"];
             foreach (JObject pro in profilesJson)
@@ -73,7 +73,7 @@ namespace AWSLambda2
                 if (birthday != null)
                 {
                     birthdayDate = FormatDateInput(birthday);
-                    if (birthdayDate == "09/06")
+                    if (birthdayDate == dayDate)
                     {
                         var year = Years((string)pro["birthday"]);
                         pro.Add("years",year);
@@ -84,7 +84,7 @@ namespace AWSLambda2
                 if (pro["admissionDate"] != null)
                 {
                     admissionDate = FormatDateInput(admissionDate);
-                    if (admissionDate == "19/03")
+                    if (admissionDate == dayDate)
                     {
                         var year = Years((string)pro["admissionDate"]);
                         pro.Add("years", year);
@@ -100,28 +100,43 @@ namespace AWSLambda2
         }
         public string HtmlContent(ArrayList array)
         {
+            string newHtml = "";
             string html = File.ReadAllText("Index.txt");
-            JObject birthday = JObject.Parse((string)array[0]);
-            foreach(JObject arr in birthday)
+            
+             ArrayList birthday = (ArrayList) array[0];
+            if (birthday.Count != 0)
             {
-                //var name = arr[0]["name"];
-                var html1 = html.Split("<!-- *line* -->");
-                //var newHtml = html1[0] + "<td>" + arr["name"].ToString();
+                foreach (JObject arr in birthday)
+                {
+                    var name = arr["name"];
+                    var html1 = html.Split("<!-- *line* -->");
+                    newHtml = html1[0] + "<br><strong>" + name + "</strong> está completando <strong>" + arr["years"] + "</strong> anos de idade \n <!-- *line* -->\n" + html1[1];
+                    html = newHtml;
+                }
             }
-            return File.ReadAllText("Index.txt");
+            ArrayList timeBase2 = (ArrayList)array[1];
+            foreach (JObject arr in timeBase2)
+            {
+                var name = arr["name"];
+                var html1 = html.Split("<!-- *linebase* -->");
+                newHtml = html1[0] + "<br><strong>" + name + "</strong> está completando <strong>" + arr["years"] + "</strong> anos de Base2 \n <!-- *linebase* -->\n" + html1[1];
+                html = newHtml;
+            }
+            return newHtml;
         }
-        public void Execute()
+        public string Execute(string html)
         {
            
-            var apiKey = "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";
+            var apiKey = "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";
             var client = new SendGridClient(apiKey);
-            var from = new EmailAddress("elder.lima@base2.com.br", "Example User");
-            var subject = "Sending with SendGrid is Fun";
-            var to = new EmailAddress("elder.barbosa.lima@gmail.com", "Example User");
-            var plainTextContent = "and easy to do anywhere, even with C#";
-            var htmlContent = "";
+            var from = new EmailAddress("noreplay@base2.com.br", "nao-responda - Aniversariantes");
+            var subject = "Aniversariantes "+DateTime.Today.ToString("d");
+            var to = new EmailAddress("elder.barbosa.lima@gmail.com", "-");
+            var plainTextContent = "";
+            var htmlContent = html;
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
             var response = client.SendEmailAsync(msg);
+            return response.ToString();
         }
         /// <summary>
         /// A simple function that takes a string and does a ToUpper
@@ -129,7 +144,7 @@ namespace AWSLambda2
         /// <param name="input"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public ArrayList FunctionHandler()
+        public string FunctionHandler()
         {
            
           
@@ -137,10 +152,7 @@ namespace AWSLambda2
            
             var profilesResult = getBirthDayProfiles(profiles);
             var html = HtmlContent(profilesResult);
-            Execute();
-
-
-            return (profilesResult);
+            return (Execute(html));
         }
     }
 }
