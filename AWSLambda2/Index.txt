@@ -16,7 +16,7 @@
   <thead>
     <tr>
      
-Aniversariantes do dia
+      <!-- <th scope='col'><h3 style='margin-left:1px'>Aniversariantes do dia</h3></th> -->
       
     </tr>
   </thead>
@@ -32,7 +32,7 @@ Aniversariantes do dia
 <table class="table table-borderless">
   <thead>
     <tr>
-          Tempo de Base2
+          <!-- <th scope='col'><h3 style='margin-left:1px'>Tempo de Base2</h3></th> -->
           </tr>
   </thead>
   <tbody>
