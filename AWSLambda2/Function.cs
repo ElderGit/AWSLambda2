@@ -72,8 +72,8 @@ namespace AWSLambda2
                
                 if (birthday != null)
                 {
-                    birthdayDate = FormatDateInput(birthday);
-                    if (birthdayDate == dayDate)
+              
+                    if (FormatDateInput(birthday) == dayDate)
                     {
                         var year = Years((string)pro["birthday"]);
                         pro.Add("years",year);
@@ -102,32 +102,44 @@ namespace AWSLambda2
         {
             string newHtml = "";
             string html = File.ReadAllText("Index.txt");
-            
-             ArrayList birthday = (ArrayList) array[0];
+            ArrayList birthday = (ArrayList) array[0];
+            ArrayList timeBase2 = (ArrayList)array[1];
             if (birthday.Count != 0)
             {
+                var html1 = html.Split("<!-- <th scope='col'><h3 style='margin - left:1px'>Aniversariantes do dia</h3></th> -->");
+                html = html1[0] + "\n<th scope='col'><h3 style='margin - left:1px'>Aniversariantes do dia</h3></th>\n" + html1[1];
+                html1 = html.Split("<!-- *line* -->");
                 foreach (JObject arr in birthday)
                 {
                     var name = arr["name"];
-                    var html1 = html.Split("<!-- *line* -->");
-                    newHtml = html1[0] + "<br><strong>" + name + "</strong> est· completando <strong>" + arr["years"] + "</strong> anos de idade \n <!-- *line* -->\n" + html1[1];
+                    html1 = html.Split("<!-- *line* -->");
+                    newHtml = html1[0] + "<br><strong>" + name + "</strong> est√° fazendo anivers√°rio hoje. \n <!-- *line* -->\n" + html1[1];
                     html = newHtml;
                 }
             }
-            ArrayList timeBase2 = (ArrayList)array[1];
-            foreach (JObject arr in timeBase2)
+           
+            if (timeBase2.Count != 0)
+            {
+                var html1 = html.Split("<!-- <th scope='col'><h3 style='margin-left:1px'>Tempo de Base2</h3></th> -->");
+                html = html1[0] + "\n <th scope='col'><h3 style='margin - left:1px'>Tempo de Base2</h3></th> \n" + html1[1];
+
+                foreach (JObject arr in timeBase2)
             {
                 var name = arr["name"];
-                var html1 = html.Split("<!-- *linebase* -->");
-                newHtml = html1[0] + "<br><strong>" + name + "</strong> est· completando <strong>" + arr["years"] + "</strong> anos de Base2 \n <!-- *linebase* -->\n" + html1[1];
+                 html1 = html.Split("<!-- *linebase* -->");
+                newHtml = html1[0] + "<br><strong>" + name + "</strong> est√° completando <strong>" + arr["years"] + "</strong>"+((int)arr["years"]>1?" anos":" ano")+" de Base2 \n <!-- *linebase* -->\n" + html1[1];
                 html = newHtml;
             }
+            }
+            if (timeBase2.Count == 0 && birthday.Count == 0)
+                return "";
+
             return newHtml;
         }
         public string Execute(string html)
         {
            
-            var apiKey = "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";
+            var apiKey = "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";
             var client = new SendGridClient(apiKey);
             var from = new EmailAddress("noreplay@base2.com.br", "nao-responda - Aniversariantes");
             var subject = "Aniversariantes "+DateTime.Today.ToString("d");
@@ -152,7 +164,10 @@ namespace AWSLambda2
            
             var profilesResult = getBirthDayProfiles(profiles);
             var html = HtmlContent(profilesResult);
-            return (Execute(html));
+            if (html != "")
+                return (Execute(html));
+            else
+                return null;
         }
     }
 }
