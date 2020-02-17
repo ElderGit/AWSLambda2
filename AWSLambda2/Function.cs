@@ -56,9 +56,8 @@ namespace AWSLambda2
         }
         public string DateNow()
         {
-            var day = DateTime.Today.ToString("d");
-            var daySplit = day.Split("/");
-            var dayDate = daySplit[0] + "/" + daySplit[1];
+            var day = DateTime.Today.ToString("d").Split("-");
+            var dayDate = day[0] + "/" + day[1];
             return dayDate;
         }
         public ArrayList getBirthDayProfiles(string profiles)
