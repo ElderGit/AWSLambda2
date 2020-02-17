@@ -6,7 +6,6 @@ using SendGrid.Helpers.Mail;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
@@ -50,11 +49,9 @@ namespace AWSLambda2
         }
         public int Years(string Date)
         {
-            var dayDate = DateTime.Today;
-            int year = dayDate.Year;
-            var splitAdmissionDate = Date.Split("-");
-            var yearAdmissionDate = int.Parse(splitAdmissionDate[0]);
-            return year - yearAdmissionDate;
+            int Year = DateTime.Today.Year;
+            int yearAdmissionDate = int.Parse(Date.Split("-")[0]);
+            return Year - yearAdmissionDate;
 
         }
         public string DateNow()
@@ -184,9 +181,6 @@ namespace AWSLambda2
             string html = "<!doctype html><html lang='en'>  <head>    <!-- Required meta tags -->    <meta charset='utf-8'>    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>    <!-- Bootstrap CSS -->    <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css' integrity='sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh' crossorigin='anonymous'>    </head>  <body><table class='table table-borderless'>  <thead>    <tr>           <!-- <th scope='col'><h3 style='margin-left:1px'>Aniversariantes do dia</h3></th> -->          </tr>  </thead>  <tbody>    <tr>       <td><!-- *line* --></td>     </tr>     </tbody></table><br><br><table class='table table-borderless'>  <thead>    <tr>          <!-- <th scope='col'><h3 style='margin-left:1px'>Tempo de Base2</h3></th> -->          </tr>  </thead>  <tbody>    <tr>       <td><!-- *linebase* --></td>     </tr>     </tbody></table><table class='table table-borderless'>  <thead>    <tr>          <!-- <th scope='col'><h3 style='margin-left:1px'>Proximas datas</h3></th> -->          </tr>  </thead>  <tbody>    <tr>       <td><!-- *lineDatesMonth* --></td>     </tr>     </tbody></table>    <!-- Optional JavaScript -->    <!-- jQuery first, then Popper.js, then Bootstrap JS -->    <script src='https://code.jquery.com/jquery-3.4.1.slim.min.js' integrity='sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n' crossorigin='anonymous'></script>    <script src='https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js' integrity='sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo' crossorigin='anonymous'></script>    <script src='https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js' integrity='sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6' crossorigin='anonymous'></script>  </body></html>";
             ArrayList birthday = (ArrayList)array[0];
             ArrayList timeBase2 = (ArrayList)array[1];
-
-
-
             if (birthday.Count != 0)
             {
                 var html1 = html.Split("<!-- <th scope='col'><h3 style='margin - left:1px'>Aniversariantes do dia</h3></th> -->");
@@ -225,20 +219,22 @@ namespace AWSLambda2
                     if (arr.admission)
                     {
                         html1 = html.Split("<!-- *lineDatesMonth* -->");
-                        newHtml = html1[0] + "<br><strong>" + name + "</strong> irá completar <strong>" + arr.years + "</strong>" + (arr.years > 1 ? " anos" : " ano") + " de Base2 no dia <strong>" + FormatDateInput((string)arr.admissionDate) + " </strong> \n <!-- *lineDatesMonth* -->\n" + html1[1];
+                        newHtml = html1[0] + "<br><strong>" + name + "</strong> irá completar <strong>" + arr.years + "</strong>" + (arr.years > 1 ? " anos" : " ano") + " de Base2 no dia <strong>" + FormatDateInput(arr.admissionDate) + " </strong> \n <!-- *lineDatesMonth* -->\n" + html1[1];
 
                     }
                     if (arr.birthdayMonth)
                     {
                         html1 = html.Split("<!-- *lineDatesMonth* -->");
-                        newHtml = html1[0] + "<br>Aniversário <strong>" + name + " dia: " + FormatDateInput((string)arr.birthday) + " </strong>\n<!-- *lineDatesMonth* -->\n" + html1[1];
+                        newHtml = html1[0] + "<br>Aniversário <strong>" + name + " dia: " + FormatDateInput(arr.birthday) + " </strong>\n<!-- *lineDatesMonth* -->\n" + html1[1];
 
                     }
                     html = newHtml;
                 }
             }
             if (timeBase2.Count == 0 && birthday.Count == 0 && list.Count == 0)
+            {
                 return "";
+            }
 
             return newHtml;
         }
@@ -256,12 +252,6 @@ namespace AWSLambda2
             var response = client.SendEmailAsync(msg);
             return response.ToString();
         }
-        /// <summary>
-        /// A simple function that takes a string and does a ToUpper
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="context"></param>
-        /// <returns></returns>
         public string FunctionHandler()
         {
 
@@ -271,9 +261,13 @@ namespace AWSLambda2
             var profilesResult = getBirthDayProfiles(profiles);
             var html = HtmlContent(profilesResult, listDate);
             if (html != "")
+            {
                 return (Execute(html));
+            }
             else
+            {
                 return null;
+            }
         }
     }
 }
