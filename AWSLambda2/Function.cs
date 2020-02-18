@@ -20,21 +20,23 @@ namespace AWSLambda2
         public string name { get; set; }
         public string status { get; set; }
         public string id { get; set; }
-        public string day { get; set; }
-        public bool admission { get; set; }
-        public bool birthdayMonth { get; set; }
-        public int years { get; set; }
+        public int Age { get; set; }
+        public int CompanyTime { get; set; }
+
+
 
     }
     public class Function
     {
         public List<item> listDate;
-        public string getProfile()
+        private string ApiXerpa_ = "Bearer fHOoWDl4LK1f0Nw5pvOnNTzbWxo_S6GQTPEOLa6wh-c=";
+        public string GetProfiles()
         {
+           
             var client = new RestClient("https://app.xerpa.com.br/api/g");
             client.Timeout = -1;
             var request = new RestRequest(Method.POST);
-            request.AddHeader("Authorization", "Bearer fHOoWDl4LK1f0Nw5pvOnNTzbWxo_S6GQTPEOLa6wh-c=");
+            request.AddHeader("Authorization", ApiXerpa_);
             request.AddHeader("Content-Type", "application/json");
             request.AddParameter("application/json", "{\"query\":\"query{company(id:\\\"4930\\\"){profile_search(query:\\\"page_size=3000&page=1&source=false&filter[status][]=active%2Cin-admission%2Coffboarding\\\"){profiles{id,name,username,birthday,status,admissionDate}}}}\",\"variables\":{\"companyId\":4930}}",
                        ParameterType.RequestBody);
@@ -56,123 +58,63 @@ namespace AWSLambda2
         }
         public string DateNow()
         {
-            var day = DateTime.Today.ToString("d").Split("-");
+            var day = DateTime.Today.ToString("d").Split("/");
             var dayDate = day[0] + "/" + day[1];
             return dayDate;
         }
-        public ArrayList getBirthDayProfiles(string profiles)
+        public List<item> ConvertJsonToItem( string profiles)
         {
             JObject json = JObject.Parse(profiles);
-            var j = json["data"]["company"]["profile_search"]["profiles"]; ;
-
-            var dayDate = DateNow();
-
-            ArrayList profilesBirthDay = new ArrayList();
-            ArrayList profilesAdmissionDate = new ArrayList();
-            ArrayList arrayReturn = new ArrayList();
-            ArrayList DatesMonth = new ArrayList();
-
-            var profilesJson = json["data"]["company"]["profile_search"]["profiles"];
-            foreach (JObject pro in profilesJson)
+            var j = json["data"]["company"]["profile_search"]["profiles"];
+            List<item> items = new List<item>();
+            foreach (JObject key in j)
             {
-                var birthday = pro["birthday"] != null ? (string)pro["birthday"] : null;
-                var admissionDate = pro["admissionDate"] != null ? (string)pro["admissionDate"] : null;
-
-                if (birthday != null)
-                {
-                    if (FormatDateInput(birthday) == dayDate)
-                    {
-                        var year = Years((string)pro["birthday"]);
-                        pro.Add("years", year);
-                        profilesBirthDay.Add(pro);
-                    }
-                }
-
-                {
-                    admissionDate = FormatDateInput(admissionDate);
-                    if (admissionDate == dayDate)
-                    {
-                        var year = Years((string)pro["admissionDate"]);
-                        pro.Add("years", year);
-                        profilesAdmissionDate.Add(pro);
-                    }
-                }
-                if ((string)pro["birthday"] != null)
-                {
-                    string monthBirthday = (string)pro["birthday"];
-                    var monthBirthday_ = monthBirthday.Split("-");
-                    int intMonthBirthday = int.Parse(monthBirthday_[1]);
-                    var monthNow = DateTime.Today.Month;
-                    var monthAdmissionDate = pro["admissionDate"].ToString().Split("-");
-                    int intMonthAdmissionDate = int.Parse(monthAdmissionDate[1]);
-                    if (intMonthAdmissionDate == monthNow)
-                    {
-                        int day_ = int.Parse(monthAdmissionDate[2]);
-                        var dayNow_ = DateTime.Today.Day;
-                        if (day_ > dayNow_)
-                        {
-                            var year = Years((string)pro["admissionDate"]);
-                            pro.Add("admission", true);
-                            pro.Add("birthdayMonth", false);
-                            pro.Add("years", year);
-                            pro.Add("day", day_);
-                            DatesMonth.Add(pro);
-
-                        }
-                    }
-                    if (intMonthBirthday == monthNow)
-                    {
-                        int day = int.Parse(monthBirthday_[2]);
-                        var dayNow = DateTime.Today.Day;
-                        if (day > dayNow)
-                        {
-                            var year = Years((string)pro["birthday"]);
-                            pro.Add("birthdayMonth", true);
-                            pro.Add("admission", false);
-                            pro.Add("years", year);
-                            pro.Add("day", day);
-                            DatesMonth.Add(pro);
-                        }
-                    }
-
-                }
-
-            }
-
-            var collection = new List<item>();
-            foreach (JObject value in DatesMonth)
-            {
-
                 item item = new item
                 {
-                    name = value["name"].ToString(),
-                    admissionDate = value["admissionDate"].ToString(),
-                    birthday = value["birthday"].ToString(),
-                    id = value["id"].ToString(),
-                    status = value["status"].ToString(),
-                    day = value["day"].ToString(),
-                    birthdayMonth = (bool)value["birthdayMonth"],
-                    admission = (bool)value["admission"],
-                    years = (int)value["years"]
+                    name = key["name"].ToString(),
+                    admissionDate = FormatDateInput(key["admissionDate"].ToString()),
+                    birthday = FormatDateInput(key["birthday"].ToString()),
+                    status = key["status"].ToString(),
+                    Age = Years(key["birthday"].ToString()),
+                    CompanyTime = Years(key["admissionDate"].ToString())
 
                 };
-                collection.Add(item);
+                items.Add(item);
             }
-
-            listDate = collection.OrderBy(x => x.day).ToList();
-            arrayReturn.Add(profilesBirthDay);
-            arrayReturn.Add(profilesAdmissionDate);
-
-            return arrayReturn;
+            return items;
         }
-        //int IComparer.Compare(object x, object y)
-        //{
-        //    Object arrA = (Object)x;
-        //    Object arrB = (Object)x;
-        //    return arrA.Day.CompareTo(arrB.Day);
-
-        //}
-
+        public List<item> GetProfilesBirthdayToday(List<item> items)
+        {
+            var BirthdayToday = from key in items
+                                where key.birthday == DateNow()
+                                select key;
+            return BirthdayToday.ToList();
+        }
+        public List<item> GetProfilesAdmissionToday(List<item> items)
+        {
+            var AdmissionToday = from key in items
+                                 where key.admissionDate == DateNow()
+                                 select key;
+            return AdmissionToday.ToList();
+        }
+        public List<item> GetProfilesNextAdmissionMonth(List<item> items)
+        {
+            var NextAdmission = from key in items
+                              where int.Parse(key.admissionDate.Split("/")[1]) == DateTime.Today.Month && int.Parse(key.admissionDate.Split("/")[0]) > DateTime.Today.Day
+                              orderby key.admissionDate
+                              select key;
+            return NextAdmission.ToList();
+        }
+        public List<item> GetProfilesNextBirthdayMonth(List<item> items)
+        {
+            var NextBirthdaysMonths = from key in items
+                                       where int.Parse(key.birthday.Split("/")[1]) == DateTime.Today.Month && int.Parse(key.birthday.Split("/")[0]) > DateTime.Today.Day
+                                       orderby key.birthday
+                                       select key;
+            return NextBirthdaysMonths.ToList();
+        }
+     
+          
 
         public string HtmlContent(ArrayList array, List<item> list)
         {
@@ -212,23 +154,23 @@ namespace AWSLambda2
                 var html1 = html.Split("<!-- <th scope='col'><h3 style='margin-left:1px'>Proximas datas</h3></th> -->");
                 html = html1[0] + "\n <th scope='col'><h3 style='margin-left:1px'>Próximas datas</h3></th> \n" + html1[1];
 
-                foreach (item arr in list)
-                {
-                    var name = arr.name;
-                    if (arr.admission)
-                    {
-                        html1 = html.Split("<!-- *lineDatesMonth* -->");
-                        newHtml = html1[0] + "<br><strong>" + name + "</strong> irá completar <strong>" + arr.years + "</strong>" + (arr.years > 1 ? " anos" : " ano") + " de Base2 no dia <strong>" + FormatDateInput(arr.admissionDate) + " </strong> \n <!-- *lineDatesMonth* -->\n" + html1[1];
+                //foreach (item arr in list)
+                //{
+                //    var name = arr.name;
+                //    if (arr.admission)
+                //    {
+                //        html1 = html.Split("<!-- *lineDatesMonth* -->");
+                //        newHtml = html1[0] + "<br><strong>" + name + "</strong> irá completar <strong>" + arr.years + "</strong>" + (arr.years > 1 ? " anos" : " ano") + " de Base2 no dia <strong>" + FormatDateInput(arr.admissionDate) + " </strong> \n <!-- *lineDatesMonth* -->\n" + html1[1];
 
-                    }
-                    if (arr.birthdayMonth)
-                    {
-                        html1 = html.Split("<!-- *lineDatesMonth* -->");
-                        newHtml = html1[0] + "<br>Aniversário <strong>" + name + " dia: " + FormatDateInput(arr.birthday) + " </strong>\n<!-- *lineDatesMonth* -->\n" + html1[1];
+                //    }
+                //    if (arr.birthdayMonth)
+                //    {
+                //        html1 = html.Split("<!-- *lineDatesMonth* -->");
+                //        newHtml = html1[0] + "<br>Aniversário <strong>" + name + " dia: " + FormatDateInput(arr.birthday) + " </strong>\n<!-- *lineDatesMonth* -->\n" + html1[1];
 
-                    }
-                    html = newHtml;
-                }
+                //    }
+                //    html = newHtml;
+                //}
             }
             if (timeBase2.Count == 0 && birthday.Count == 0 && list.Count == 0)
             {
@@ -255,18 +197,18 @@ namespace AWSLambda2
         {
 
 
-            string profiles = getProfile();
+            string profiles = GetProfiles();
 
-            var profilesResult = getBirthDayProfiles(profiles);
-            var html = HtmlContent(profilesResult, listDate);
-            if (html != "")
-            {
-                return (Execute(html));
-            }
-            else
-            {
-                return null;
-            }
+            //var html = HtmlContent(profilesResult, listDate);
+            //if (html != "")
+            //{
+            //    return (Execute(html));
+            //}
+            //else
+            //{
+            //    return null;
+            //}
+            return null;
         }
     }
 }
